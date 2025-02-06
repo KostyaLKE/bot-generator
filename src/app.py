@@ -1,8 +1,8 @@
-from flask import Flask, send_from_directory  # Добавь send_from_directory
-from src.routes import text_routes, image_routes, video_routes, youtube_routes  # ... (остальные импорты)
-from src.config import Config
+from flask import Flask, send_from_directory
+from .routes import text_routes, image_routes, video_routes, youtube_routes # Точка перед routes
+from .config import Config  # <- ИЗМЕНЕНИЕ: Точка перед config
 
-app = Flask(__name__, static_folder='../public', static_url_path='/')  # ИЗМЕНЕНИЯ!
+app = Flask(__name__, static_folder='../public', static_url_path='/')
 app.config.from_object(Config)
 
 # ... (регистрация маршрутов)
