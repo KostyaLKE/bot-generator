@@ -1,5 +1,5 @@
 # bot-generator-main/src/services/text_generation/text_service.py
-from src.services.text_generation import openai_service  # Импортируем openai_service
+from src.services.text_generation import openai_service
 from src.config import Config
 import openai
 
@@ -9,6 +9,7 @@ class TextService:
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY is not set in environment variables")
         openai.api_key = self.openai_api_key
+
 
     def get_prompt_for_social_network(self, network_name, news_text):
         """Возвращает промпт для заданной социальной сети."""
@@ -93,7 +94,6 @@ class TextService:
 Постарайся сделать текст интересным и вовлекающим. Добавь несколько релевантных хэштегов.
 """
 
-
     def generate_text_for_social_media(self, news_text, social_networks, other_name):
         """
         Генерирует текст для разных социальных сетей на основе новостного текста.
@@ -110,16 +110,22 @@ class TextService:
                 prompt = self.get_prompt_for_social_network(network_name, news_text)
 
                 try:
-                    response = openai.Completion.create(
-                        engine="gpt-3.5-turbo-instruct",
-                        prompt=prompt,
+                    #  ИЗМЕНЕНИЕ:  Используем openai.chat.completions.create
+                    response = openai.chat.completions.create(
+                        model="gpt-3.5-turbo-instruct",  #  Или другая модель
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant."},
+                            {"role": "user", "content": prompt},
+                        ],
                         max_tokens=250,
                         n=1,
                         stop=None,
                         temperature=0.7,
                     )
-                    generated_text = response.choices[0].text.strip()
+                    # ИЗМЕНЕНИЕ:  Доступ к тексту через .message.content
+                    generated_text = response.choices[0].message.content.strip()
                     results[network_name] = generated_text
+
 
                 except openai.APIConnectionError as e:
                     print(f"Failed to connect to OpenAI API: {e}")
@@ -127,20 +133,18 @@ class TextService:
                 except openai.RateLimitError as e:
                     print(f"OpenAI API rate limit exceeded: {e}")
                     results[network_name] = f"Превышен лимит запросов к API OpenAI для {network_name}: {e}"
-                except openai.APIStatusError as e:
-                    print(f"OpenAI API returned an error: {e}")
-                    results[network_name] = f"Ошибка API OpenAI для {network_name}: {e}"
-
+                except openai.APIStatusError as e:  #  Добавили обработку APIStatusError
+                    print(f"OpenAI API returned an error status: {e}")
+                    results[network_name] = f"Ошибка API OpenAI для {network_name}: {e.status_code} - {e.response}"
                 except Exception as e:
                     print(f"Unexpected error during text generation: {e}")
                     results[network_name] = f"Непредвиденная ошибка при генерации текста для {network_name}: {e}"
-
 
             return results
 
         except Exception as e:
             print(f"Error in TextService: {e}")
-            raise  # Re-raise the exception
+            raise
 
 
 text_service = TextService()
