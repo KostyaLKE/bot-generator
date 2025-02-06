@@ -1,3 +1,5 @@
+# bot-generator-main/src/routes/text_routes.py
+
 from flask import Blueprint
 from src.controllers import text_controller
 
