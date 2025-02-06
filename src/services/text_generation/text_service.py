@@ -111,7 +111,7 @@ class TextService:
 
                 try:
                     response = openai.Completion.create(
-                        engine="gpt-3.5-turbo-instruct", #  Используем gpt-3.5-turbo-instruct
+                        engine="gpt-3.5-turbo-instruct",
                         prompt=prompt,
                         max_tokens=250,
                         n=1,
@@ -121,9 +121,16 @@ class TextService:
                     generated_text = response.choices[0].text.strip()
                     results[network_name] = generated_text
 
-                except openai.error.OpenAIError as e:
-                    print(f"OpenAI API error: {e}")
-                    results[network_name] = f"Ошибка при генерации текста для {network_name}: {e}"
+                except openai.APIConnectionError as e:
+                    print(f"Failed to connect to OpenAI API: {e}")
+                    results[network_name] = f"Ошибка подключения к API OpenAI для {network_name}: {e}"
+                except openai.RateLimitError as e:
+                    print(f"OpenAI API rate limit exceeded: {e}")
+                    results[network_name] = f"Превышен лимит запросов к API OpenAI для {network_name}: {e}"
+                except openai.APIStatusError as e:
+                    print(f"OpenAI API returned an error: {e}")
+                    results[network_name] = f"Ошибка API OpenAI для {network_name}: {e}"
+
                 except Exception as e:
                     print(f"Unexpected error during text generation: {e}")
                     results[network_name] = f"Непредвиденная ошибка при генерации текста для {network_name}: {e}"
@@ -133,7 +140,7 @@ class TextService:
 
         except Exception as e:
             print(f"Error in TextService: {e}")
-            raise
+            raise  # Re-raise the exception
 
 
 text_service = TextService()
