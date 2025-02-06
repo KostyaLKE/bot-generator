@@ -110,9 +110,9 @@ class TextService:
                 prompt = self.get_prompt_for_social_network(network_name, news_text)
 
                 try:
-                    #  ИЗМЕНЕНИЕ:  Используем openai.chat.completions.create
+                    #  ИЗМЕНЕНИЕ:  Используем gpt-4-turbo
                     response = openai.chat.completions.create(
-                        model="gpt-3.5-turbo-instruct",  #  Или другая модель
+                        model="gpt-4-turbo",  #  ВОТ ОНО!
                         messages=[
                             {"role": "system", "content": "You are a helpful assistant."},
                             {"role": "user", "content": prompt},
@@ -122,10 +122,8 @@ class TextService:
                         stop=None,
                         temperature=0.7,
                     )
-                    # ИЗМЕНЕНИЕ:  Доступ к тексту через .message.content
                     generated_text = response.choices[0].message.content.strip()
                     results[network_name] = generated_text
-
 
                 except openai.APIConnectionError as e:
                     print(f"Failed to connect to OpenAI API: {e}")
@@ -133,7 +131,7 @@ class TextService:
                 except openai.RateLimitError as e:
                     print(f"OpenAI API rate limit exceeded: {e}")
                     results[network_name] = f"Превышен лимит запросов к API OpenAI для {network_name}: {e}"
-                except openai.APIStatusError as e:  #  Добавили обработку APIStatusError
+                except openai.APIStatusError as e:
                     print(f"OpenAI API returned an error status: {e}")
                     results[network_name] = f"Ошибка API OpenAI для {network_name}: {e.status_code} - {e.response}"
                 except Exception as e:
