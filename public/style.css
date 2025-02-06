@@ -1,0 +1,107 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #333;
+}
+
+#input-section, #output-section {
+    margin: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+textarea, input[type="text"], input[type="file"], select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /*  Чтобы padding не увеличивал ширину */
+    font-size: 16px;
+}
+
+select {
+    cursor: pointer;
+}
+
+#social-networks {
+    display: flex;
+    flex-wrap: wrap; /*  Перенос на новую строку, если не помещается */
+}
+
+#social-networks div {
+    margin-right: 15px;
+    margin-bottom: 5px; /* Добавил отступ снизу */
+}
+
+#generate-button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: block; /* Кнопка на всю ширину */
+    margin: 20px auto 0; /* Центрируем кнопку */
+}
+
+#generate-button:hover {
+    background-color: #0056b3;
+}
+
+#results-container {
+    margin-top: 20px;
+}
+.result-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.result-item h3 {
+    margin-top: 0;
+    color: #007bff;
+}
+
+.result-image {
+    max-width: 100%; /*  Чтобы изображение не выходило за границы */
+    height: auto;
+    display: block; /*  Убираем лишние отступы */
+    margin-bottom: 10px;
+}
+
+.result-video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.error-message {
+    color: red;
+    padding: 10px;
+    border: 1px solid red;
+    background-color: #ffe6e6;
+    margin-bottom: 10px;
+}
+#youtube_link_input {
+  display: none;
+}
