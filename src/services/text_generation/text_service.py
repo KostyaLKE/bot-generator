@@ -8,7 +8,8 @@ class TextService:
         self.openai_api_key = Config.OPENAI_API_KEY
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY is not set in environment variables")
-        openai.api_key = self.openai_api_key
+        # openai.api_key = self.openai_api_key  #  УДАЛЯЕМ!
+        self.client = openai.OpenAI(api_key=self.openai_api_key) #  Создаем ЭКЗЕМПЛЯР клиента
 
 
     def get_prompt_for_social_network(self, network_name, news_text):
@@ -110,9 +111,9 @@ class TextService:
                 prompt = self.get_prompt_for_social_network(network_name, news_text)
 
                 try:
-                    #  ИЗМЕНЕНИЕ:  Используем gpt-4-turbo
-                    response = openai.chat.completions.create(
-                        model="gpt-4-turbo",  #  ВОТ ОНО!
+                    #  ИЗМЕНЕНИЕ:  Используем self.client
+                    response = self.client.chat.completions.create(
+                        model="gpt-3.5-turbo-instruct",  #  Убрали engine, используем model
                         messages=[
                             {"role": "system", "content": "You are a helpful assistant."},
                             {"role": "user", "content": prompt},
@@ -134,6 +135,7 @@ class TextService:
                 except openai.APIStatusError as e:
                     print(f"OpenAI API returned an error status: {e}")
                     results[network_name] = f"Ошибка API OpenAI для {network_name}: {e.status_code} - {e.response}"
+
                 except Exception as e:
                     print(f"Unexpected error during text generation: {e}")
                     results[network_name] = f"Непредвиденная ошибка при генерации текста для {network_name}: {e}"
