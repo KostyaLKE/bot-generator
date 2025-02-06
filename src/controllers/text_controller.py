@@ -1,5 +1,7 @@
+# bot-generator-main/src/controllers/text_controller.py
+
 from flask import request, jsonify, Blueprint
-from src.services.text_generation import text_service
+from src.services.text_generation.text_service import text_service  #  Импортируем text_service
 
 
 def generate_text_from_news():
