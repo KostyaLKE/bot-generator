@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор контента для соцсетей</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Генератор контента для соцсетей</h1>
+
+    <section id="input-section">
+        <h2>Входные данные</h2>
+
+        <div class="input-group">
+            <label for="news-text">Текст новости/Текст:</label>
+            <textarea id="news-text" placeholder="Введите текст новости или любой другой текст..." rows="5"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="user-image">Изображение (необязательно):</label>
+            <input type="file" id="user-image" accept="image/*">
+        </div>
+
+        <div class="input-group" id="youtube_link_input" style="display: none;">
+            <label for="youtube-link">Ссылка на YouTube видео:</label>
+            <input type="text" id="youtube-link" placeholder="Вставьте ссылку на YouTube видео">
+        </div>
+
+
+        <div class="input-group">
+            <label>Действие:</label>
+            <select id="action-select">
+                <option value="generate_text">Сгенерировать текст</option>
+                <option value="generate_text_image">Сгенерировать текст и изображение</option>
+                <option value="generate_text_video">Сгенерировать текст и видео</option>
+                <option value="generate_video">Сгенерировать видео</option>
+                <option value="generate_text_image_from_image">Текст и изображение (из вашего изображения)</option>
+                <option value="generate_text_video_from_image">Текст и видео (из вашего изображения)</option>
+                <option value="generate_video_from_image">Видео (из вашего изображения)</option>
+                <option value="edit_youtube_video">Смонтировать видео из YouTube</option>
+            </select>
+        </div>
+
+
+        <div class="input-group">
+            <label>Социальные сети:</label>
+            <div id="social-networks">
+                <div><input type="checkbox" id="twitter" name="social" value="twitter"><label for="twitter">Twitter</label></div>
+                <div><input type="checkbox" id="youtube" name="social" value="youtube"><label for="youtube">YouTube</label></div>
+                <div><input type="checkbox" id="tiktok" name="social" value="tiktok"><label for="tiktok">TikTok</label></div>
+                <div><input type="checkbox" id="instagram" name="social" value="instagram"><label for="instagram">Instagram</label></div>
+                <div><input type="checkbox" id="telegram" name="social" value="telegram"><label for="telegram">Telegram</label></div>
+                <div><input type="checkbox" id="facebook" name="social" value="facebook"><label for="facebook">Facebook</label></div>
+                <div><input type="checkbox" id="other" name="social" value="other"><label for="other">Другое</label> <input type="text" id="otherName" placeholder="Название соцсети"></div>
+            </div>
+        </div>
+
+        <button id="generate-button">Сгенерировать</button>
+    </section>
+
+    <section id="output-section">
+        <h2>Результаты</h2>
+        <div id="results-container">
+            <!-- Сюда будут добавляться результаты -->
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
