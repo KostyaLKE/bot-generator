@@ -1,0 +1,17 @@
+ {
+  "name": "social-media-post-generator",
+  "version": "1.0.0",
+  "description": "Генератор текстов для постов в соцсетях на основе новостей с использованием ChatGPT.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "openai": "^4.26.0"
+  }
+}
