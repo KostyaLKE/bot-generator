@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, flash
 from dotenv import load_dotenv
 import os
 from langdetect import detect, LangDetectException  # Импортируем langdetect
+from fetch_article import fetch_article_text
+
 
 
 load_dotenv()
