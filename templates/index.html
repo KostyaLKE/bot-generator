@@ -10,8 +10,35 @@
         cursor: pointer;
       }
       .platform-checkboxes label {
-        margin-right: 15px; /* Добавляем отступ между чекбоксами */
+        margin-right: 15px;
       }
+      #text-info {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #555;
+      }
+      .remaining-chars {
+        font-size: 0.8em;
+        margin-left: 5px; /* Отступ от названия платформы */
+      }
+      #preview {
+        margin-top: 20px; /* Отступ от формы */
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+      }
+      #preview strong { /* Для названий платформ в превью */
+        margin-right: 5px;
+      }
+      .corrected-text {
+        background-color: #fff3cd; /* Желтоватый фон для исправленного текста */
+        border: 1px solid #ffeeba;
+        padding: 5px;
+        margin-top: 5px;
+        border-radius: 4px;
+        display: none; /* Скрываем по умолчанию */
+    }
     </style>
 </head>
 <body class="bg-light">
@@ -22,6 +49,8 @@
                 <div class="mb-3">
                     <label for="news_text" class="form-label">Введите текст новости:</label>
                     <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
+                    <div id="text-info"></div>
+                    <div id="corrected-text" class="corrected-text"></div> {/* Блок для исправленного текста */}
                 </div>
                 <div class="mb-3 platform-checkboxes">
                     <label class="form-label">Выберите соцсети:</label><br>
@@ -39,13 +68,15 @@
                     <select class="form-select" id="output_language" name="output_language">
                         <option value="ru">Русский</option>
                         <option value="uk">Украинский</option>
-                        <option value="en">Английский</option> <!-- Можно добавить и другие языки -->
+                        <option value="en">Английский</option>
                     </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
             </form>
         </div>
+
+        <div id="preview" class="mt-3"></div> {/* Добавлено */}
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -82,5 +113,6 @@
         });
       }
     </script>
+    <script src="/static/script.js"></script>
 </body>
 </html>
