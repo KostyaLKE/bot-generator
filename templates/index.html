@@ -32,12 +32,16 @@
         margin-right: 5px;
       }
       .corrected-text {
-        background-color: #fff3cd; /* Желтоватый фон для исправленного текста */
-        border: 1px solid #ffeeba;
-        padding: 5px;
-        margin-top: 5px;
-        border-radius: 4px;
-        display: none; /* Скрываем по умолчанию */
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          padding: 5px;
+          margin-top: 5px;
+          border-radius: 4px;
+          display: none;
+      }
+      .spelling-suggestion {
+        text-decoration: underline dotted #c80f0f; /* Пунктирное подчеркивание */
+        cursor: help; /* Курсор помощи при наведении */
     }
     </style>
 </head>
@@ -50,7 +54,7 @@
                     <label for="news_text" class="form-label">Введите текст новости:</label>
                     <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
                     <div id="text-info"></div>
-                    <div id="corrected-text" class="corrected-text"></div> {/* Блок для исправленного текста */}
+                    <div id="corrected-text" class="corrected-text"></div>
                 </div>
                 <div class="mb-3 platform-checkboxes">
                     <label class="form-label">Выберите соцсети:</label><br>
@@ -76,7 +80,7 @@
             </form>
         </div>
 
-        <div id="preview" class="mt-3"></div> {/* Добавлено */}
+        <div id="preview" class="mt-3"></div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -104,7 +108,8 @@
         {% endif %}
     </div>
 
-    <script>
+    <script type="module" src="script.js" defer></script>  {/* ИЗМЕНЕНО: type="module" и defer */}
+    <script> // Этот скрипт можно удалить, он теперь не нужен
       function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function() {
           alert('Текст скопирован!');
@@ -113,6 +118,6 @@
         });
       }
     </script>
-    <script src="/static/script.js"></script>
+
 </body>
 </html>
