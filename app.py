@@ -1,15 +1,13 @@
 import openai
 from flask import Flask, render_template, request, flash
-from dotenv import load_dotenv  # Для загрузки переменных из .env файла
+from dotenv import load_dotenv
 import os
 
-load_dotenv()  # Загружаем переменные окружения из .env (если есть)
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'  # Замените на РЕАЛЬНЫЙ секретный ключ!
 
-# Получаем API-ключ из переменной окружения.  Если переменная не установлена,
-# openai.api_key будет None, и при попытке использовать API возникнет ошибка.
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 PLATFORM_PROMPTS = {
@@ -101,12 +99,13 @@ def generate_social_media_text(news_text, platform):
 
     prompt = prompt.format(НОВОСТЬ=news_text)
 
-    # Проверяем, установлен ли API-ключ
     if not openai.api_key:
         return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
 
     try:
-        response = openai.ChatCompletion.create(
+        #  Используем новый синтаксис OpenAI API (v1.0.0+)
+        client = openai.OpenAI() # Создаем клиентский объект
+        response = client.chat.completions.create(
             model="gpt-4-turbo",  # Или gpt-3.5-turbo, если нет доступа к gpt-4
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -117,11 +116,12 @@ def generate_social_media_text(news_text, platform):
         )
         generated_text = response.choices[0].message.content.strip()
         return {"text": generated_text, "success": True, "warning": None}
-    except openai.error.OpenAIError as e:
+
+    except openai.APIError as e:  # Используем правильный класс исключения
         return {"text": f"Ошибка OpenAI: {e}", "success": False, "warning": None}
     except Exception as e:
         return {"text": f"Произошла ошибка: {e}", "success": False, "warning": None}
-
+    
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
