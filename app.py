@@ -1,9 +1,16 @@
 import openai
 from flask import Flask, render_template, request, flash
+from dotenv import load_dotenv  # Для загрузки переменных из .env файла
+import os
+
+load_dotenv()  # Загружаем переменные окружения из .env (если есть)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'  # Замените на реальный секретный ключ!
-openai.api_key = 'YOUR_OPENAI_API_KEY'  # !!! Замените на ВАШ API-ключ OpenAI !!!
+app.config['SECRET_KEY'] = 'your_secret_key'  # Замените на РЕАЛЬНЫЙ секретный ключ!
+
+# Получаем API-ключ из переменной окружения.  Если переменная не установлена,
+# openai.api_key будет None, и при попытке использовать API возникнет ошибка.
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 PLATFORM_PROMPTS = {
     "twitter": """Ты – эксперт по контенту для Twitter (X).
@@ -92,24 +99,29 @@ def generate_social_media_text(news_text, platform):
     if not prompt:
         return {"text": "Платформа не поддерживается.", "success": False, "warning": None}
 
-    prompt = prompt.format(НОВОСТЬ=news_text) # Подставляем новость в промпт
+    prompt = prompt.format(НОВОСТЬ=news_text)
+
+    # Проверяем, установлен ли API-ключ
+    if not openai.api_key:
+        return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",  #  Или gpt-3.5-turbo, если нет доступа к gpt-4
+            model="gpt-4-turbo",  # Или gpt-3.5-turbo, если нет доступа к gpt-4
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=400,  #  Максимальное количество токенов (примерно соответствует длине текста)
-            temperature=0.7,  #  Параметр "креативности" (0.0 - детерминированный, 1.0 - очень случайный)
+            max_tokens=400,
+            temperature=0.7,
         )
         generated_text = response.choices[0].message.content.strip()
         return {"text": generated_text, "success": True, "warning": None}
     except openai.error.OpenAIError as e:
         return {"text": f"Ошибка OpenAI: {e}", "success": False, "warning": None}
-    except Exception as e:  # Обработка других возможных ошибок
+    except Exception as e:
         return {"text": f"Произошла ошибка: {e}", "success": False, "warning": None}
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -131,6 +143,7 @@ def index():
             generated_texts[platform] = result
 
     return render_template('index.html', generated_texts=generated_texts)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
