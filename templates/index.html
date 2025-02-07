@@ -12,7 +12,10 @@
       .platform-checkboxes label {
         margin-right: 15px;
       }
-      /* Убираем стили для спиннера */
+       .img-platform { /* Добавляем класс для стилизации */
+        max-width: 300px; /* Ограничиваем ширину */
+        margin-top: 10px;
+      }
     </style>
 </head>
 <body class="bg-light">
@@ -59,27 +62,25 @@
           {% endif %}
         {% endwith %}
 
-        {% if generated_texts %}
-            {% for platform, result in generated_texts.items() %}
-                <div class="alert alert-success mt-4" role="alert">
-                    <h5>Результат для {{ platform }}:</h5>
-                    <p>{{ result.text }}</p>
-                    <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ result.text }}')">
-                        Копировать
-                    </button>
-                    {% if result.warning %}
-                        <p class="text-warning">{{ result.warning }}</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        {% endif %}
-
         {% if generated_image_url %}  <!-- Добавляем вывод изображения -->
             <div class="alert alert-success mt-4" role="alert">
                 <h5>Сгенерированное изображение:</h5>
-                <img src="{{ generated_image_url }}" alt="Сгенерированное изображение" class="img-fluid">
+                <img src="{{ generated_image_url }}" alt="Сгенерированное изображение" class="img-fluid img-platform">
             </div>
         {% endif %}
+        {% if generated_texts %}
+          {% for platform, result in generated_texts.items() %}
+            <div class="alert alert-success mt-4" role="alert">
+                <h5>Результат для {{ platform }}:</h5>
+                <p>{{ result.text }}</p>
+                <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ result.text }}')">
+                    Копировать
+                </button>
+
+            </div>
+          {% endfor %}
+        {% endif %}
+
     </div>
 
     <script>
