@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генерация текста</title>
+</head>
+<body>
+    <h1>Генерация текста под соцсеть</h1>
+    <form method="post">
+        <textarea name="news_text" placeholder="Введите текст новости" required></textarea><br>
+        <select name="platform">
+            <option value="twitter">Twitter</option>
+            <option value="instagram">Instagram</option>
+            <option value="telegram">Telegram</option>
+        </select><br>
+        <button type="submit">Сгенерировать</button>
+    </form>
+    {% if generated_text %}
+        <h2>Результат:</h2>
+        <p>{{ generated_text }}</p>
+    {% endif %}
+</body>
+</html>
+
