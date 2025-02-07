@@ -1,2 +1,4 @@
-Flask
-gunicorn
+flask
+openai
+python-dotenv
+gunicorn # Если вы используете gunicorn для запуска в production
