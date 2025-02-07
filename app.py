@@ -107,8 +107,10 @@ def generate_social_media_text(news_text, platform, output_language):
     prompt = PLATFORM_PROMPTS.get(platform)
     if not prompt:
         return {"text": "Платформа не поддерживается.", "success": False, "warning": None}
+    
+    # news_language = detect_language(news_text) #Определяем язык текста новости. (Это больше не нужно)
 
-    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language)
+    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language) #, news_language=news_language)
 
     if not openai.api_key:
         return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
