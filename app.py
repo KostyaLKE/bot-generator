@@ -136,6 +136,8 @@ PLATFORM_PROMPTS = {
 """
 }
 
+
+
 def generate_image(prompt):
     """Генерирует изображение по текстовому описанию."""
     if not openai.api_key:
@@ -156,8 +158,6 @@ def generate_image(prompt):
         return {"url": None, "error": f"Ошибка OpenAI: {e}"}
     except Exception as e:
         return {"url": None, "error": f"Произошла ошибка: {e}"}
-
-
 
 def generate_social_media_post(news_text, platform, output_language):
     """Генерирует текст поста и промпт для изображения."""
