@@ -1,21 +1,14 @@
-# bot-generator-main/src/app.py
-
-from flask import Flask, send_from_directory
-from src.routes import text_routes, image_routes, video_routes, youtube_routes  # Импортируй все роуты
+from flask import Flask, jsonify
+from src.services.text_generation.simple_test import test_openai
 from src.config import Config
 
-app = Flask(__name__, static_folder='../public', static_url_path='/')
+app = Flask(__name__)
 app.config.from_object(Config)
 
-# Регистрация маршрутов
-app.register_blueprint(text_routes.text_bp, url_prefix='/api/text')
-app.register_blueprint(image_routes.image_bp, url_prefix='/api/image')
-app.register_blueprint(video_routes.video_bp, url_prefix='/api/video')
-app.register_blueprint(youtube_routes.youtube_bp, url_prefix='/api/youtube')
-
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
+@app.route('/api/test')
+def test_route():
+    result = test_openai()
+    return jsonify({"result": result})
 
 if __name__ == '__main__':
     app.run(debug=app.config['DEBUG'])
