@@ -2,14 +2,26 @@ import openai
 from flask import Flask, render_template, request, flash
 from dotenv import load_dotenv
 import os
-import re  # Импортируем модуль для регулярных выражений
+import re
+import logging  # Добавлено логирование
+from collections import defaultdict  # Добавлено для безопасного форматирования
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Настройка логирования
+logging.basicConfig(level=logging.ERROR, filename="app_errors.log", format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+@app.before_first_request
+def load_openai_key():
+    """Загружает API-ключ OpenAI перед первым запросом."""
+    openai.api_key = os.getenv('OPENAI_API_KEY')
+    if not openai.api_key:
+        raise ValueError("API-ключ OpenAI не установлен! Установите переменную окружения OPENAI_API_KEY.")
+
 
 PLATFORM_PROMPTS = {
     "twitter": """Ты – эксперт по контенту для Twitter (X).
@@ -140,24 +152,25 @@ PLATFORM_PROMPTS = {
 
 def generate_image(prompt):
     """Генерирует изображение по текстовому описанию."""
-    if not openai.api_key:
-        return {"url": None, "error": "Ошибка: API-ключ OpenAI не установлен."}
     try:
-        client = openai.OpenAI()
-        response = client.images.generate(
+        # client = openai.OpenAI()  # Исправлено: используем openai напрямую
+        response = openai.images.generate(  # Исправлено
             model="dall-e-3",
             prompt=prompt,
             size="1024x1024",
             quality="standard",
             n=1,
         )
-        image_url = response.data[0].url
-        return {"url": image_url, "error": None}
+        return {"url": response.data[0].url, "error": None}
 
     except openai.APIError as e:
+        logging.error(f"Ошибка OpenAI при генерации изображения: {e}")  # Логирование
         return {"url": None, "error": f"Ошибка OpenAI: {e}"}
     except Exception as e:
+        logging.error(f"Неизвестная ошибка при генерации изображения: {e}")  # Логирование
         return {"url": None, "error": f"Произошла ошибка: {e}"}
+
+
 
 def generate_social_media_post(news_text, platform, output_language):
     """Генерирует текст поста и промпт для изображения."""
@@ -165,15 +178,12 @@ def generate_social_media_post(news_text, platform, output_language):
     if not prompt_template:
         return {"text": "Платформа не поддерживается.", "image_prompt": None, "success": False, "warning": None}
 
-    # Форматируем ТОЛЬКО новость и язык в *основном* промпте
+    # Форматируем ТОЛЬКО новость и язык
     prompt = prompt_template.format(НОВОСТЬ=news_text, output_language=output_language)
 
-    if not openai.api_key:
-         return {"text": "Ошибка: API-ключ OpenAI не установлен.", "image_prompt": None, "success": False, "warning": None}
-
     try:
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
+        # client = openai.OpenAI() # Исправлено
+        response = openai.chat.completions.create( # Исправлено
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -184,27 +194,19 @@ def generate_social_media_post(news_text, platform, output_language):
         )
         full_response = response.choices[0].message.content.strip()
 
-        # Извлекаем промпт для изображения
-        match = re.search(r'📷 Промпт для изображения:\s*"(.*?)"', full_response, re.DOTALL)
+        # Извлекаем промпт для изображения (более надежный способ)
+        match = re.search(r'📷 Промпт для изображения:\s*(.*)', full_response, re.DOTALL)  # Исправлено
         if match:
-            image_prompt = match.group(1).strip()
-            #  Заменяем плейсхолдеры ПОСЛЕ извлечения (простейший вариант)
-            image_prompt = image_prompt.format(
-              ключевая_деталь="деталь из новости",
-              атмосфера="атмосфера",
-              окружение="окружение",
-              доп_детали="детали",
-              ключевой_объект="объект",
-              деталь="деталь",
-              главный_объект = "объект",
-              ключевой_элемент = "элемент",
-              главная_эмоция = "эмоция"
-            )
+            image_prompt = match.group(1).strip().strip('"')  # Убираем кавычки
+            # Безопасное форматирование с defaultdict
+            image_prompt = image_prompt.format_map(defaultdict(str))
         else:
             image_prompt = None
 
-        # Текст поста
-        text_match = re.search(r'(.*?)(🔹 Теперь сгенерируй|📷 Промпт для изображения:)', full_response, re.DOTALL)
+
+        # Текст поста (более надежный способ)
+        #post_text = full_response.split("🔹")[0].strip()  # Исправлено
+        text_match = re.search(r'(.*?)(🔹 Теперь сгенерируй|📷 Промпт для изображения:)', full_response, re.DOTALL) #Альтернативный вариант
         if text_match:
             post_text = text_match.group(1).strip()
         else:
@@ -213,43 +215,39 @@ def generate_social_media_post(news_text, platform, output_language):
         return {"text": post_text, "image_prompt": image_prompt, "success": True, "warning": None}
 
     except openai.APIError as e:
+        logging.error(f"Ошибка OpenAI при генерации текста: {e}")  # Логирование
         return {"text": f"Ошибка OpenAI: {e}", "image_prompt": None, "success": False, "warning": None}
     except Exception as e:
+        logging.error(f"Неизвестная ошибка при генерации текста: {e}")  # Логирование
         return {"text": f"Произошла ошибка: {e}", "image_prompt": None, "success": False, "warning": None}
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    """Основная логика приложения."""
     generated_texts = {}
-    generated_image_url = None
-
     if request.method == 'POST':
         news_text = request.form['news_text'].strip()
         platforms = request.form.getlist('platforms')
         output_language = request.form['output_language']
 
-        if not news_text:
-            flash("Пожалуйста, введите текст новости.", "error")
-            return render_template('index.html', generated_texts=generated_texts, generated_image_url=generated_image_url)
-
-        if not platforms:
-            flash("Пожалуйста, выберите хотя бы одну соцсеть.", "error")
-            return render_template('index.html', generated_texts=generated_texts, generated_image_url=generated_image_url)
+        if not news_text or not platforms:
+            flash("Введите текст новости и выберите соцсеть.", "error")
+            return render_template('index.html', generated_texts={})
 
         for platform in platforms:
             result = generate_social_media_post(news_text, platform, output_language)
-            generated_texts[platform] = result
+            if result["success"]:
+                if result["image_prompt"]:
+                    image_result = generate_image(result["image_prompt"])
+                    result["image_url"] = image_result["url"]  # Добавлено
+                    if image_result["error"]:
+                        flash(f"Ошибка изображения ({platform}): {image_result['error']}", "error")
+            generated_texts[platform] = result  # Добавлено
 
-            # Генерация изображения
-            if result["image_prompt"]:
-                image_result = generate_image(result["image_prompt"])
-                if image_result["error"]:
-                    flash(f"Ошибка при генерации изображения для {platform}: {image_result['error']}", "error")
-                else:
-                    generated_texts[platform]["image_url"] = image_result["url"]
-            else:
-                generated_texts[platform]["image_url"] = None
+    return render_template('index.html', generated_texts=generated_texts)
 
-    return render_template('index.html', generated_texts=generated_texts, generated_image_url=generated_image_url)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True) #Изменено
