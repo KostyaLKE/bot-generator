@@ -4,22 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генерация текста</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Генерация текста под соцсеть</h1>
-    <form method="post">
-        <textarea name="news_text" placeholder="Введите текст новости" required></textarea><br>
-        <select name="platform">
-            <option value="twitter">Twitter</option>
-            <option value="instagram">Instagram</option>
-            <option value="telegram">Telegram</option>
-        </select><br>
-        <button type="submit">Сгенерировать</button>
-    </form>
-    {% if generated_text %}
-        <h2>Результат:</h2>
-        <p>{{ generated_text }}</p>
-    {% endif %}
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="text-center">Генерация текста под соцсеть</h1>
+        <div class="card shadow-sm p-4">
+            <form method="post">
+                <div class="mb-3">
+                    <label for="news_text" class="form-label">Введите текст новости:</label>
+                    <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="platform" class="form-label">Выберите соцсеть:</label>
+                    <select class="form-select" id="platform" name="platform">
+                        <option value="twitter">Twitter</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="telegram">Telegram</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
+            </form>
+        </div>
+        {% if generated_text %}
+            <div class="alert alert-success mt-4" role="alert">
+                <h5>Результат:</h5>
+                <p>{{ generated_text }}</p>
+            </div>
+        {% endif %}
+    </div>
 </body>
 </html>
-
