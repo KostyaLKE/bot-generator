@@ -33,6 +33,16 @@
                     <label><input type="checkbox" name="platforms" value="youtube"> YouTube</label>
                     <label><input type="checkbox" name="platforms" value="pinterest"> Pinterest</label>
                 </div>
+
+                <div class="mb-3">
+                    <label for="output_language" class="form-label">Выберите язык генерации:</label>
+                    <select class="form-select" id="output_language" name="output_language">
+                        <option value="ru">Русский</option>
+                        <option value="uk">Украинский</option>
+                        <option value="en">Английский</option> <!-- Можно добавить и другие языки -->
+                    </select>
+                </div>
+
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
             </form>
         </div>
