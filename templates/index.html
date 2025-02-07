@@ -9,6 +9,9 @@
       .copy-button {
         cursor: pointer;
       }
+      .platform-checkboxes label {
+        margin-right: 15px; /* Добавляем отступ между чекбоксами */
+      }
     </style>
 </head>
 <body class="bg-light">
@@ -20,14 +23,17 @@
                     <label for="news_text" class="form-label">Введите текст новости:</label>
                     <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
                 </div>
-                <div class="mb-3">
-                    <label for="platform" class="form-label">Выберите соцсеть:</label>
-                    <select class="form-select" id="platform" name="platform">
-                        <option value="twitter">Twitter</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="telegram">Telegram</option>
-                    </select>
-                </div>
+<div class="mb-3 platform-checkboxes">
+    <label class="form-label">Выберите соцсети:</label><br>
+    <label><input type="checkbox" name="platforms" value="twitter"> Twitter</label>
+    <label><input type="checkbox" name="platforms" value="instagram"> Instagram</label>
+    <label><input type="checkbox" name="platforms" value="telegram"> Telegram</label>
+    <label><input type="checkbox" name="platforms" value="facebook"> Facebook</label>
+    <label><input type="checkbox" name="platforms" value="tiktok"> TikTok</label>  <!-- Добавлено -->
+    <label><input type="checkbox" name="platforms" value="youtube"> YouTube</label>  <!-- Добавлено -->
+    <label><input type="checkbox" name="platforms" value="pinterest"> Pinterest</label> <!-- Добавлено -->
+    <!-- LinkedIn удален -->
+</div>
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
             </form>
         </div>
@@ -42,25 +48,27 @@
           {% endif %}
         {% endwith %}
 
-        {% if generated_text %}
-            <div class="alert alert-success mt-4" role="alert">
-                <h5>Результат:</h5>
-                <p>{{ generated_text }}</p>
-                <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ generated_text }}')">
-                  Копировать
-                </button>
-            </div>
+        {% if generated_texts %}  <!-- Изменено: generated_texts (множественное число) -->
+            {% for platform, result in generated_texts.items() %} <!-- Цикл по платформам -->
+                <div class="alert alert-success mt-4" role="alert">
+                    <h5>Результат для {{ platform }}:</h5>
+                    <p>{{ result.text }}</p>  <!-- Доступ к тексту через .text -->
+                    <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ result.text }}')">
+                        Копировать
+                    </button>
+                    {% if result.warning %}  <!-- Отображение предупреждения -->
+                        <p class="text-warning">{{ result.warning }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
         {% endif %}
     </div>
 
     <script>
       function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function() {
-          /* clipboard successfully set */
-          // Можно добавить визуальное подтверждение копирования (например, изменить текст кнопки)
           alert('Текст скопирован!');
         }, function() {
-          /* clipboard write failed */
           alert('Не удалось скопировать текст.');
         });
       }
