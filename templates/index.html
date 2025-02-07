@@ -12,7 +12,7 @@
       .platform-checkboxes label {
         margin-right: 15px;
       }
-      .spinner-border {
+      .spinner-border { /* Добавлено для спиннера */
         display: none;
       }
     </style>
@@ -21,18 +21,14 @@
     <div class="container mt-5">
         <h1 class="text-center">Генерация текста под соцсеть</h1>
         <div class="card shadow-sm p-4">
-            <form method="post" id="generate-form">
+            <form method="post" id="generate-form">  {/* Добавлен id для формы */}
                 <div class="mb-3">
                     <label for="news_text" class="form-label">Введите текст новости:</label>
-                    <textarea class="form-control" id="news_text" name="news_text" rows="3"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="news_url" class="form-label">Или введите ссылку на новость:</label>
-                    <input type="url" class="form-control" id="news_url" name="news_url">
+                    <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
                 </div>
                 <div class="mb-3 platform-checkboxes">
                     <label class="form-label">Выберите соцсети:</label><br>
-                    <label><input type="checkbox" name="platforms" value="twitter" required> Twitter</label> <!-- required для хотя бы одной платформы -->
+                    <label><input type="checkbox" name="platforms" value="twitter"> Twitter</label>
                     <label><input type="checkbox" name="platforms" value="instagram"> Instagram</label>
                     <label><input type="checkbox" name="platforms" value="telegram"> Telegram</label>
                     <label><input type="checkbox" name="platforms" value="facebook"> Facebook</label>
@@ -51,8 +47,8 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
-                <div class="spinner-border text-primary mt-3" role="status">
-                    <span class="visually-hidden">Генерация...</span>
+                <div class="spinner-border text-primary mt-3" role="status"> {/* Добавлен спиннер */}
+                  <span class="visually-hidden">Генерация...</span>
                 </div>
             </form>
         </div>
@@ -92,6 +88,7 @@
         });
       }
 
+      // Показываем спиннер при отправке формы
       document.getElementById('generate-form').addEventListener('submit', function() {
         document.querySelector('.spinner-border').style.display = 'block';
       });
