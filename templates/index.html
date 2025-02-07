@@ -10,7 +10,10 @@
         cursor: pointer;
       }
       .platform-checkboxes label {
-        margin-right: 15px; /* Добавляем отступ между чекбоксами */
+        margin-right: 15px;
+      }
+      .spinner-border {
+        display: none;
       }
     </style>
 </head>
@@ -18,10 +21,14 @@
     <div class="container mt-5">
         <h1 class="text-center">Генерация текста под соцсеть</h1>
         <div class="card shadow-sm p-4">
-            <form method="post">
+            <form method="post" id="generate-form">
                 <div class="mb-3">
                     <label for="news_text" class="form-label">Введите текст новости:</label>
-                    <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
+                    <textarea class="form-control" id="news_text" name="news_text" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="news_url" class="form-label">Или введите ссылку на новость:</label>
+                    <input type="url" class="form-control" id="news_url" name="news_url">
                 </div>
                 <div class="mb-3 platform-checkboxes">
                     <label class="form-label">Выберите соцсети:</label><br>
@@ -39,11 +46,14 @@
                     <select class="form-select" id="output_language" name="output_language">
                         <option value="ru">Русский</option>
                         <option value="uk">Украинский</option>
-                        <option value="en">Английский</option> <!-- Можно добавить и другие языки -->
+                        <option value="en">Английский</option>
                     </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
+                <div class="spinner-border text-primary mt-3" role="status">
+                    <span class="visually-hidden">Генерация...</span>
+                </div>
             </form>
         </div>
 
@@ -81,6 +91,10 @@
           alert('Не удалось скопировать текст.');
         });
       }
+
+      document.getElementById('generate-form').addEventListener('submit', function() {
+        document.querySelector('.spinner-border').style.display = 'block';
+      });
     </script>
 </body>
 </html>
