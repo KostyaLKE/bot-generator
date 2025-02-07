@@ -1,8 +1,10 @@
 flask
 openai
 python-dotenv
-gunicorn  # Рекомендуется для production
-langdetect # Если будешь использовать определение языка
-beautifulsoup4 # Если будешь подключать обработку с сылок
-requests # Если будешь подключать обработку с сылок
-requests-html # Если будешь подключать обработку с сылок
+gunicorn
+langdetect
+beautifulsoup4
+requests
+requests-html
+spacy==3.7.4
+https://github.com/explosion/spacy-models/releases/download/ru_core_news_sm-3.7.1/ru_core_news_sm-3.7.1.tar.gz#egg=ru_core_news_sm
