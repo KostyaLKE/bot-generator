@@ -45,7 +45,7 @@ function updatePlatformLimits() {
     platformCheckboxes.forEach(checkbox => {
         const platform = checkbox.value;
         const config = platformConfig[platform];
-        if (!config) return;
+        if (!config) return; // Добавлено: проверка
 
         let maxLength = config.max_length;
         if (config.prefix) {
@@ -85,7 +85,7 @@ function updatePreview() {
         if (checkbox.checked) {
             const platform = checkbox.value;
             const config = platformConfig[platform];
-            if (!config) return;
+            if (!config) return; // Добавлено: проверка
 
             let generatedText = text;
             let maxLength = config.max_length;
@@ -108,18 +108,18 @@ function updatePreview() {
     previewDiv.innerHTML = previewHTML;
 }
 
-// Функция для проверки орфографии (используем Yandex Speller API)
 async function checkSpelling(text) {
     const apiUrl = 'https://speller.yandex.net/services/spellservice.json/checkText';
     const params = new URLSearchParams();
     params.append('text', text);
-    params.append('options', 518); // Опции: игнорировать URL, цифры, заглавные, + находить повторы
+    params.append('options', 518);
     params.append('format', 'plain');
-     // Определение языка для проверки орфографии
+
     const detectedLanguages = francAll(text, { minLength: 3, only: ['eng', 'rus', 'ukr'] });
-    let lang = 'ru,en'; // Язык по умолчанию
+    let lang = 'ru,en';
     if (detectedLanguages.length > 0 && detectedLanguages[0][0] !== 'und') {
-        if(detectedLanguages[0][0] === 'ukr'){lang = 'uk,en'}
+        if (detectedLanguages[0][0] === 'ukr') { lang = 'uk,en'; }
+        // Добавьте здесь другие языки, если нужно
     }
     params.append('lang', lang);
 
@@ -127,31 +127,34 @@ async function checkSpelling(text) {
     try {
         const response = await fetch(`${apiUrl}?${params.toString()}`);
         if (!response.ok) {
-          console.error("Speller API error:", response.status, response.statusText);
-          return text; // Возвращаем исходный текст в случае ошибки
+            console.error("Speller API error:", response.status, response.statusText);
+            return; //  Не возвращаем текст, а просто выходим
         }
         const data = await response.json();
 
-        // Заменяем слова с ошибками
         let correctedText = text;
-        data.forEach(error => {
-          if (error.s && error.s.length > 0) { // Если есть варианты исправления
-            const originalWord = error.word;
-            const correctedWord = error.s[0]; // Берем первый вариант исправления
-            correctedText = correctedText.replace(originalWord, `<span class="spelling-suggestion" title="Предполагаемое исправление: ${correctedWord}">${originalWord}</span>`);
-           }
-        });
-         //Если есть опечатки
-        if(data.length > 0){
+        //  Заменяем *все* вхождения, а не только первое
+        for (const error of data) {
+            if (error.s && error.s.length > 0) {
+                const originalWord = error.word;
+                const correctedWord = error.s[0];
+                //  Используем регулярное выражение с флагом 'g' (global)
+                const regex = new RegExp(originalWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                correctedText = correctedText.replace(regex, `<span class="spelling-suggestion" title="Предполагаемое исправление: ${correctedWord}">${originalWord}</span>`);
+            }
+        }
+        if (data.length > 0)
+        {
             correctedTextDiv.innerHTML = "<b>Исправленный текст: </b>" + correctedText;
-            correctedTextDiv.style.display = 'block'; // Показываем
-           }
-        else{ correctedTextDiv.style.display = 'none'; }
+             correctedTextDiv.style.display = 'block';
+        }
+        else { correctedTextDiv.style.display = 'none'; }
 
-        return ; // Возвращаем *исправленный* текст
+        return; //  Не возвращаем текст
+
     } catch (error) {
         console.error("Error during spellcheck:", error);
-        return text; // В случае ошибки возвращаем исходный текст
+        return;
     }
 }
 
@@ -160,8 +163,7 @@ async function onNewsTextChange() {
     updateTextInfo();
     updatePlatformLimits();
     updatePreview();
-    await checkSpelling(newsTextarea.value); // Ждем завершения проверки орфографии
-
+    await checkSpelling(newsTextarea.value); // Ждем завершения
 }
 
 // Навешиваем обработчики
@@ -170,5 +172,5 @@ platformCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', onNewsTextChange);
 });
 
-// Вызываем при загрузке страницы
-onNewsTextChange();
+// Вызываем при загрузке страницы (уже не нужно, так как defer)
+// onNewsTextChange();
