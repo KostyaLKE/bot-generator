@@ -3,3 +3,5 @@ openai
 python-dotenv
 gunicorn
 langdetect
+beautifulsoup4
+requests
