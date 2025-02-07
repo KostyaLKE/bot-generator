@@ -3,8 +3,8 @@ from flask import Flask, render_template, request, flash
 from dotenv import load_dotenv
 import os
 import re
-import logging  # Добавлено логирование
-from collections import defaultdict  # Добавлено для безопасного форматирования
+import logging
+from collections import defaultdict
 
 load_dotenv()
 
@@ -15,13 +15,20 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 logging.basicConfig(level=logging.ERROR, filename="app_errors.log", format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-@app.before_first_request
-def load_openai_key():
-    """Загружает API-ключ OpenAI перед первым запросом."""
-    openai.api_key = os.getenv('OPENAI_API_KEY')
-    if not openai.api_key:
-        raise ValueError("API-ключ OpenAI не установлен! Установите переменную окружения OPENAI_API_KEY.")
+# @app.before_first_request  # УСТАРЕЛО!
+# def load_openai_key():
+#     """Загружает API-ключ OpenAI перед первым запросом."""
+#     openai.api_key = os.getenv('OPENAI_API_KEY')
+#     if not openai.api_key:
+#         raise ValueError("API-ключ OpenAI не установлен! Установите переменную окружения OPENAI_API_KEY.")
 
+@app.before_request
+def load_openai_key_and_check_first_request():
+    """Загружает API-ключ OpenAI и проверяет, первый ли это запрос."""
+    if not app.got_first_request: # Исправлено: используем got_first_request
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        if not openai.api_key:
+          raise ValueError("API-ключ OpenAI не установлен! Установите переменную окружения OPENAI_API_KEY.")
 
 PLATFORM_PROMPTS = {
     "twitter": """Ты – эксперт по контенту для Twitter (X).
@@ -153,8 +160,7 @@ PLATFORM_PROMPTS = {
 def generate_image(prompt):
     """Генерирует изображение по текстовому описанию."""
     try:
-        # client = openai.OpenAI()  # Исправлено: используем openai напрямую
-        response = openai.images.generate(  # Исправлено
+        response = openai.images.generate(
             model="dall-e-3",
             prompt=prompt,
             size="1024x1024",
@@ -164,10 +170,10 @@ def generate_image(prompt):
         return {"url": response.data[0].url, "error": None}
 
     except openai.APIError as e:
-        logging.error(f"Ошибка OpenAI при генерации изображения: {e}")  # Логирование
+        logging.error(f"Ошибка OpenAI при генерации изображения: {e}")
         return {"url": None, "error": f"Ошибка OpenAI: {e}"}
     except Exception as e:
-        logging.error(f"Неизвестная ошибка при генерации изображения: {e}")  # Логирование
+        logging.error(f"Неизвестная ошибка при генерации изображения: {e}")
         return {"url": None, "error": f"Произошла ошибка: {e}"}
 
 
@@ -178,12 +184,10 @@ def generate_social_media_post(news_text, platform, output_language):
     if not prompt_template:
         return {"text": "Платформа не поддерживается.", "image_prompt": None, "success": False, "warning": None}
 
-    # Форматируем ТОЛЬКО новость и язык
     prompt = prompt_template.format(НОВОСТЬ=news_text, output_language=output_language)
 
     try:
-        # client = openai.OpenAI() # Исправлено
-        response = openai.chat.completions.create( # Исправлено
+        response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -194,19 +198,14 @@ def generate_social_media_post(news_text, platform, output_language):
         )
         full_response = response.choices[0].message.content.strip()
 
-        # Извлекаем промпт для изображения (более надежный способ)
-        match = re.search(r'📷 Промпт для изображения:\s*(.*)', full_response, re.DOTALL)  # Исправлено
+        match = re.search(r'📷 Промпт для изображения:\s*(.*)', full_response, re.DOTALL)
         if match:
-            image_prompt = match.group(1).strip().strip('"')  # Убираем кавычки
-            # Безопасное форматирование с defaultdict
+            image_prompt = match.group(1).strip().strip('"')
             image_prompt = image_prompt.format_map(defaultdict(str))
         else:
             image_prompt = None
 
-
-        # Текст поста (более надежный способ)
-        #post_text = full_response.split("🔹")[0].strip()  # Исправлено
-        text_match = re.search(r'(.*?)(🔹 Теперь сгенерируй|📷 Промпт для изображения:)', full_response, re.DOTALL) #Альтернативный вариант
+        text_match = re.search(r'(.*?)(🔹 Теперь сгенерируй|📷 Промпт для изображения:)', full_response, re.DOTALL)
         if text_match:
             post_text = text_match.group(1).strip()
         else:
@@ -215,10 +214,10 @@ def generate_social_media_post(news_text, platform, output_language):
         return {"text": post_text, "image_prompt": image_prompt, "success": True, "warning": None}
 
     except openai.APIError as e:
-        logging.error(f"Ошибка OpenAI при генерации текста: {e}")  # Логирование
+        logging.error(f"Ошибка OpenAI при генерации текста: {e}")
         return {"text": f"Ошибка OpenAI: {e}", "image_prompt": None, "success": False, "warning": None}
     except Exception as e:
-        logging.error(f"Неизвестная ошибка при генерации текста: {e}")  # Логирование
+        logging.error(f"Неизвестная ошибка при генерации текста: {e}")
         return {"text": f"Произошла ошибка: {e}", "image_prompt": None, "success": False, "warning": None}
 
 
@@ -241,13 +240,13 @@ def index():
             if result["success"]:
                 if result["image_prompt"]:
                     image_result = generate_image(result["image_prompt"])
-                    result["image_url"] = image_result["url"]  # Добавлено
+                    result["image_url"] = image_result["url"]
                     if image_result["error"]:
                         flash(f"Ошибка изображения ({platform}): {image_result['error']}", "error")
-            generated_texts[platform] = result  # Добавлено
+            generated_texts[platform] = result
 
     return render_template('index.html', generated_texts=generated_texts)
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True) #Изменено
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
