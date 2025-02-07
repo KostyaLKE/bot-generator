@@ -107,17 +107,6 @@
             {% endfor %}
         {% endif %}
     </div>
-
-    <script type="module" src="script.js" defer></script>  {/* ИЗМЕНЕНО: type="module" и defer */}
-    <script> // Этот скрипт можно удалить, он теперь не нужен
-      function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(function() {
-          alert('Текст скопирован!');
-        }, function() {
-          alert('Не удалось скопировать текст.');
-        });
-      }
-    </script>
-
+    <script type="module" src="script.js" defer></script>
 </body>
 </html>
