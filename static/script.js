@@ -157,17 +157,10 @@ async function onNewsTextChange() {
   updatePreview();
   await checkSpelling(newsTextarea.value);
 }
-
-//  ***  Вот главное изменение:  ***
 document.addEventListener('DOMContentLoaded', () => {
-  //  Этот код выполнится *после* полной загрузки DOM
-
-  // Навешиваем обработчики
-  newsTextarea.addEventListener('input', onNewsTextChange);
-  platformCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', onNewsTextChange);
-  });
-
-  //  Начальная инициализация (если в поле уже есть текст)
-  onNewsTextChange();
+    newsTextarea.addEventListener('input', onNewsTextChange);
+    platformCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', onNewsTextChange);
+    });
+    onNewsTextChange();
 });
