@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генерация текста</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      .copy-button {
+        cursor: pointer;
+      }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container mt-5">
@@ -23,23 +28,42 @@
                         <option value="telegram">Telegram</option>
                     </select>
                 </div>
-                <div class="mb-3">
-    <label for="style" class="form-label">Выберите стиль текста:</label>
-    <select class="form-select" id="style" name="style">
-        <option value="formal">Формальный</option>
-        <option value="informal">Неформальный</option>
-    </select>
-</div>
-
                 <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
             </form>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} mt-4" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
         {% if generated_text %}
             <div class="alert alert-success mt-4" role="alert">
                 <h5>Результат:</h5>
                 <p>{{ generated_text }}</p>
+                <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ generated_text }}')">
+                  Копировать
+                </button>
             </div>
         {% endif %}
     </div>
+
+    <script>
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+          /* clipboard successfully set */
+          // Можно добавить визуальное подтверждение копирования (например, изменить текст кнопки)
+          alert('Текст скопирован!');
+        }, function() {
+          /* clipboard write failed */
+          alert('Не удалось скопировать текст.');
+        });
+      }
+    </script>
 </body>
 </html>
