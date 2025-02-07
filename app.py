@@ -2,9 +2,8 @@ import openai
 from flask import Flask, render_template, request, flash
 from dotenv import load_dotenv
 import os
-from langdetect import detect, LangDetectException  # Импортируем langdetect
-from fetch_article import fetch_article_text
-
+from langdetect import detect, LangDetectException
+from fetch_article import fetch_article_text  # Импортируем
 
 
 load_dotenv()
@@ -96,6 +95,7 @@ PLATFORM_PROMPTS = {
 🎯 Текст должен быть информативным, но с элементами интриги!"""
 }
 
+
 def detect_language(text):
     """Определяет язык текста."""
     try:
@@ -109,10 +109,8 @@ def generate_social_media_text(news_text, platform, output_language):
     prompt = PLATFORM_PROMPTS.get(platform)
     if not prompt:
         return {"text": "Платформа не поддерживается.", "success": False, "warning": None}
-    
-    # news_language = detect_language(news_text) #Определяем язык текста новости. (Это больше не нужно)
 
-    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language) #, news_language=news_language)
+    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language)
 
     if not openai.api_key:
         return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
@@ -120,7 +118,7 @@ def generate_social_media_text(news_text, platform, output_language):
     try:
         client = openai.OpenAI()
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4-turbo",  # Или другую подходящую модель
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -142,19 +140,27 @@ def index():
     generated_texts = {}
     if request.method == 'POST':
         news_text = request.form['news_text'].strip()
+        news_url = request.form['news_url'].strip()
         platforms = request.form.getlist('platforms')
-        output_language = request.form['output_language']  # Получаем выбранный язык
-
-        if not news_text:
-            flash("Пожалуйста, введите текст новости.", "error")
-            return render_template('index.html', generated_texts=generated_texts)
+        output_language = request.form['output_language']
 
         if not platforms:
             flash("Пожалуйста, выберите хотя бы одну соцсеть.", "error")
             return render_template('index.html', generated_texts=generated_texts)
 
+        # Сначала проверяем URL, если он есть
+        if news_url:
+            news_text = fetch_article_text(news_url)
+            if news_text.startswith("Ошибка"):  # Обрабатываем ошибки fetch_article_text
+                flash(news_text, "error")
+                return render_template('index.html', generated_texts=generated_texts)
+        elif not news_text:  # Если URL нет, проверяем наличие текста
+            flash("Пожалуйста, введите текст новости или URL.", "error")
+            return render_template('index.html', generated_texts=generated_texts)
+
+
         for platform in platforms:
-            result = generate_social_media_text(news_text, platform, output_language) # Передаём язык
+            result = generate_social_media_text(news_text, platform, output_language)
             generated_texts[platform] = result
 
     return render_template('index.html', generated_texts=generated_texts)
