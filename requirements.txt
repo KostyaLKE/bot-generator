@@ -1,7 +1,8 @@
 flask
 openai
 python-dotenv
-gunicorn
-langdetect
-beautifulsoup4
-requests
+gunicorn  # Рекомендуется для production
+langdetect # Если будешь использовать определение языка
+beautifulsoup4 # Если будешь подключать обработку с сылок
+requests # Если будешь подключать обработку с сылок
+requests-html # Если будешь подключать обработку с сылок
