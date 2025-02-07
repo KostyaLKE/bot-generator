@@ -1,5 +1,3 @@
-# src/services/text_generation/simple_test.py
-
 import openai
 from src.config import Config
 
@@ -23,4 +21,4 @@ def test_openai():
         return response.choices[0].message.content.strip()
 
     except Exception as e:
-        return f"OpenAI API error: {e}"
+        return f"OpenAI API error: {str(e)}"
