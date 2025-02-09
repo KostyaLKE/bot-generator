@@ -1,9 +1,5 @@
 flask
 openai
-python-dotenv
-gunicorn
-langdetect
-beautifulsoup4
 requests
-requests-html
-spacy==3.7.4
+pillow
+gunicorn
