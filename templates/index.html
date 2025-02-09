@@ -15,6 +15,9 @@
             height: 100px;
             margin-bottom: 20px;
         }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
         img {
             max-width: 100%;
             height: auto;
@@ -24,14 +27,20 @@
 </head>
 <body>
     <h1>Генератор новостей</h1>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         <textarea name="news_text" placeholder="Введите текст новости..." required></textarea><br>
+        <input type="file" name="image" accept="image/*"><br>
         <button type="submit">Сгенерировать</button>
     </form>
 
     {% if news_text %}
         <h2>Сгенерированная новость:</h2>
         <p>{{ news_text }}</p>
+    {% endif %}
+
+    {% if uploaded_image %}
+        <h2>Загруженное изображение:</h2>
+        <img src="{{ uploaded_image }}" alt="Загруженное изображение">
     {% endif %}
 
     {% if image_path %}
