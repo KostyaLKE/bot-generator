@@ -1,5 +1,7 @@
 flask
 openai
-requests
-pillow
+python-dotenv
 gunicorn
+langdetect
+beautifulsoup4
+requests
