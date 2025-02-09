@@ -20,11 +20,23 @@ def generate_news_summary(news_text, api_key):
     )
     return response.choices[0].message.content.strip()
 
+def generate_detailed_prompt(news_text, api_key):
+    client = openai.OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Ты эксперт по визуализации. Преобразуй новость в детальное описание сцены для DALL·E. Описывай объект, стиль, освещение и детали."},
+            {"role": "user", "content": news_text}
+        ]
+    )
+    return response.choices[0].message.content.strip()
+
 def generate_news_image(news_text, api_key, output_path="static/news_image.png"):
+    detailed_prompt = generate_detailed_prompt(news_text, api_key)  # Используем новую функцию
     client = openai.OpenAI(api_key=api_key)
     response = client.images.generate(
         model="dall-e-3",
-        prompt=news_text,
+        prompt=detailed_prompt,  # Передаем детальный промпт
         n=1,
         size="1024x1024"
     )
@@ -48,7 +60,7 @@ def index():
             uploaded_file.save(image_path)
         
         new_text = generate_news_summary(news_text, api_key)
-        generated_image_path = generate_news_image(new_text, api_key)
+        generated_image_path = generate_news_image(new_text, api_key) # Передаём сокращённый текст новости
         
         return render_template('index.html', news_text=new_text, image_path=generated_image_path, uploaded_image=image_path)
     
