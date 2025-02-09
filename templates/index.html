@@ -3,94 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генерация текста</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Генератор новостей</title>
     <style>
-      .copy-button {
-        cursor: pointer;
-      }
-      .platform-checkboxes label {
-        margin-right: 15px;
-      }
-       .img-platform { /* Добавляем класс для стилизации */
-        max-width: 300px; /* Ограничиваем ширину */
-        margin-top: 10px;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center">Генерация текста под соцсеть</h1>
-        <div class="card shadow-sm p-4">
-            <form method="post">
-                <div class="mb-3">
-                    <label for="news_text" class="form-label">Введите текст новости:</label>
-                    <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
-                </div>
-                <div class="mb-3 platform-checkboxes">
-                    <label class="form-label">Выберите соцсети:</label><br>
-                    <label><input type="checkbox" name="platforms" value="twitter"> Twitter</label>
-                    <label><input type="checkbox" name="platforms" value="instagram"> Instagram</label>
-                    <label><input type="checkbox" name="platforms" value="telegram"> Telegram</label>
-                    <label><input type="checkbox" name="platforms" value="facebook"> Facebook</label>
-                    <label><input type="checkbox" name="platforms" value="tiktok"> TikTok</label>
-                    <label><input type="checkbox" name="platforms" value="youtube"> YouTube</label>
-                    <label><input type="checkbox" name="platforms" value="pinterest"> Pinterest</label>
-                </div>
+<body>
+    <h1>Генератор новостей</h1>
+    <form method="post">
+        <textarea name="news_text" placeholder="Введите текст новости..." required></textarea><br>
+        <button type="submit">Сгенерировать</button>
+    </form>
 
-                <div class="mb-3">
-                    <label for="output_language" class="form-label">Выберите язык генерации:</label>
-                    <select class="form-select" id="output_language" name="output_language">
-                        <option value="ru">Русский</option>
-                        <option value="uk">Украинский</option>
-                        <option value="en">Английский</option>
-                    </select>
-                </div>
+    {% if news_text %}
+        <h2>Сгенерированная новость:</h2>
+        <p>{{ news_text }}</p>
+    {% endif %}
 
-                <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
-
-            </form>
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} mt-4" role="alert">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        {% if generated_image_url %}  <!-- Добавляем вывод изображения -->
-            <div class="alert alert-success mt-4" role="alert">
-                <h5>Сгенерированное изображение:</h5>
-                <img src="{{ generated_image_url }}" alt="Сгенерированное изображение" class="img-fluid img-platform">
-            </div>
-        {% endif %}
-        {% if generated_texts %}
-          {% for platform, result in generated_texts.items() %}
-            <div class="alert alert-success mt-4" role="alert">
-                <h5>Результат для {{ platform }}:</h5>
-                <p>{{ result.text }}</p>
-                <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ result.text }}')">
-                    Копировать
-                </button>
-
-            </div>
-          {% endfor %}
-        {% endif %}
-
-    </div>
-
-    <script>
-      function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(function() {
-          alert('Текст скопирован!');
-        }, function() {
-          alert('Не удалось скопировать текст.');
-        });
-      }
-    </script>
+    {% if image_path %}
+        <h2>Сгенерированное изображение:</h2>
+        <img src="{{ image_path }}" alt="Сгенерированное изображение">
+    {% endif %}
 </body>
 </html>
