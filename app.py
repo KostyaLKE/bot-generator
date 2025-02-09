@@ -1,141 +1,164 @@
 import openai
-import requests
-from PIL import Image
-from io import BytesIO
+from flask import Flask, render_template, request, flash
+from dotenv import load_dotenv
 import os
-from flask import Flask, request, render_template, url_for, send_from_directory
-import logging
+from langdetect import detect, LangDetectException  # Импортируем langdetect
+from fetch_article import fetch_article_text
+
+
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app.config['SECRET_KEY'] = 'your_secret_key'  # Замените на РЕАЛЬНЫЙ секретный ключ!
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
+PLATFORM_PROMPTS = {
+    "twitter": """Ты – эксперт по контенту для Twitter (X).
+Напиши цепляющий твит на языке {output_language} на основе следующей новости:
+"{НОВОСТЬ}"
 
-def generate_news_summary(news_text, api_key):
+📌 Правила:
+- Длина: до 200 символов
+- Минимум "воды", только суть!
+- Можно добавить интригу или вопрос
+- Не используй сложные конструкции
+- В конце добавь 2-3 хештега на языке {output_language}
+
+🎯 Твой текст должен быть емким, но мощным!""",
+    "instagram": """Ты – профессиональный SMM-копирайтер, который создает увлекательные посты для Instagram.
+Твоя задача — написать пост на языке {output_language} на основе следующей новости:
+"{НОВОСТЬ}"
+
+📌 Правила оформления:
+- Максимальная длина поста: 150 символов
+- Стиль: динамичный, яркий, с эмоциями
+- Используй эмодзи, чтобы привлечь внимание
+- Добавь призыв к действию (например, "Что думаете? Делитесь в комментариях! 💬")
+- В конце добавь до 5 популярных хештегов, связанных с темой, на языке {output_language}
+
+🎯 Твой результат должен быть кратким, увлекательным и соответствовать стилистике Instagram!""",
+    "facebook": """Ты – профессиональный копирайтер, который пишет посты для Facebook.
+На основе следующей новости создай вовлекающий пост на языке {output_language}:
+"{НОВОСТЬ}"
+
+📌 Правила:
+- Длина: 200-500 символов
+- Формат: 2-3 абзаца, без сложных фраз
+- Добавь призыв к обсуждению
+- В конце — 3-4 хештега на языке {output_language}
+
+🎯 Твой текст должен быть интересным и удобным для чтения!""",
+    "tiktok": """Ты – креативный контент-мейкер TikTok.
+Создай описание к видео на языке {output_language} на основе этой новости:
+"{НОВОСТЬ}"
+
+📌 Формат:
+- Максимум 150 символов
+- Минимум "воды", максимум вовлечения
+- Добавь 4-5 популярных хештегов на языке {output_language}
+
+🎯 Должно выглядеть так, будто это трендовый контент TikTok!""",
+    "telegram": """Ты – профессиональный Telegram-копирайтер.
+Напиши лаконичный, но информативный пост на языке {output_language} по этой новости:
+"{НОВОСТЬ}"
+
+📌 Условия:
+- Длина: 200-400 символов
+- Не слишком официально, но и не "жёлтая пресса"
+- Важные факты + легкий намек на вывод
+- 2-3 хештега в конце на языке {output_language}
+
+🎯 Текст должен быть полезным и читабельным!""",
+    "pinterest": """Ты – креативный копирайтер для Pinterest.
+Создай описание для пина на языке {output_language} на основе этой новости:
+"{НОВОСТЬ}"
+
+📌 Условия:
+- Длина: до 500 символов
+- Используй вдохновляющий и мотивирующий стиль
+- Призывай пользователей сохранять пин или делиться им
+- Включи 3-4 хештега на языке {output_language}
+
+🎯 Текст должен быть привлекательным и легко воспринимаемым!""",
+    "youtube": """Ты – эксперт по контенту для YouTube.
+Напиши описание видео на языке {output_language}, основываясь на следующей новости:
+"{НОВОСТЬ}"
+
+📌 Условия:
+- Длина: до 300 символов
+- Кратко расскажи о теме видео
+- Используй интересный стиль, чтобы вовлечь зрителя
+- Призови подписаться или оставить комментарий
+- Добавь 2-3 хештега на языке {output_language}
+
+🎯 Текст должен быть информативным, но с элементами интриги!"""
+}
+
+def detect_language(text):
+    """Определяет язык текста."""
     try:
-        client = openai.OpenAI(api_key=api_key)
+        return detect(text)
+    except LangDetectException:
+        return 'en'  # В случае ошибки возвращаем английский по умолчанию
+
+
+def generate_social_media_text(news_text, platform, output_language):
+    """Генерирует текст для соцсети с учетом языка."""
+    prompt = PLATFORM_PROMPTS.get(platform)
+    if not prompt:
+        return {"text": "Платформа не поддерживается.", "success": False, "warning": None}
+    
+    # news_language = detect_language(news_text) #Определяем язык текста новости. (Это больше не нужно)
+
+    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language) #, news_language=news_language)
+
+    if not openai.api_key:
+        return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
+
+    try:
+        client = openai.OpenAI()
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-turbo",
             messages=[
-                {"role": "system", "content": "Ты журналист. Переформулируй новость, сделав её краткой, но информативной."},
-                {"role": "user", "content": news_text}
-            ]
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=400,
+            temperature=0.7,
         )
-        return response.choices[0].message.content.strip()
-    except openai.OpenAIError as e:  # Более специфичное исключение
-        logger.error(f"OpenAI API error (summary): {e}")
-        return "Ошибка при генерации сводки новости. Пожалуйста, проверьте ваш API ключ и подключение к интернету."
+        generated_text = response.choices[0].message.content.strip()
+        return {"text": generated_text, "success": True, "warning": None}
+
+    except openai.APIError as e:
+        return {"text": f"Ошибка OpenAI: {e}", "success": False, "warning": None}
     except Exception as e:
-        logger.error(f"Unexpected error (summary): {e}")
-        return "Произошла непредвиденная ошибка при генерации сводки."
-
-
-def generate_detailed_prompt(news_text, api_key):
-    try:
-        client = openai.OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Ты эксперт по визуализации. Преобразуй новость в детальное описание сцены для DALL·E. Описывай объект, стиль, освещение и детали."},
-                {"role": "user", "content": news_text}
-            ]
-        )
-        return response.choices[0].message.content.strip()
-    except openai.OpenAIError as e:
-        logger.error(f"OpenAI API error (prompt): {e}")
-        return "Ошибка при генерации промпта для изображения. Пожалуйста, проверьте ваш API ключ."
-    except Exception as e:
-        logger.error(f"Unexpected error (prompt): {e}")
-        return "Произошла непредвиденная ошибка при генерации промпта."
-
-
-def generate_news_image(news_text, api_key, filename="news_image.png"):
-    try:
-        detailed_prompt = generate_detailed_prompt(news_text, api_key)
-        if "Ошибка" in detailed_prompt: #Если произошла ошибка на предыдущем шаге
-             return None, detailed_prompt
-        
-        client = openai.OpenAI(api_key=api_key)
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=detailed_prompt,
-            n=1,
-            size="1024x1024"
-        )
-
-        image_url = response.data[0].url
-        image_data = requests.get(image_url).content
-        image = Image.open(BytesIO(image_data))
-
-        # Создаем уникальное имя файла, чтобы избежать конфликтов
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        image.save(image_path)
-        return image_path, None # Возвращаем путь и сообщение об ошибке (None если все хорошо)
-
-    except openai.OpenAIError as e:
-        logger.error(f"OpenAI API error (image): {e}")
-        return None, "Ошибка при генерации изображения. Пожалуйста, проверьте ваш API ключ."
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request error (image): {e}")
-        return None, "Ошибка при загрузке изображения. Проверьте подключение к интернету."
-    except Exception as e:
-        logger.error(f"Unexpected error (image): {e}")
-        return None, "Произошла непредвиденная ошибка при генерации изображения."
-
+        return {"text": f"Произошла ошибка: {e}", "success": False, "warning": None}
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    news_text = None
-    image_path = None
-    uploaded_image = None
-    error_message = None  # Добавляем переменную для хранения сообщений об ошибках
-
+    generated_texts = {}
     if request.method == 'POST':
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            error_message = "Ошибка: API ключ OpenAI не найден.  Установите переменную окружения OPENAI_API_KEY."
-            logger.error(error_message)
-            return render_template('index.html', error_message=error_message), 500
+        news_text = request.form['news_text'].strip()
+        platforms = request.form.getlist('platforms')
+        output_language = request.form['output_language']  # Получаем выбранный язык
 
-        news_text_input = request.form['news_text']
-        uploaded_file = request.files['image']
+        if not news_text:
+            flash("Пожалуйста, введите текст новости.", "error")
+            return render_template('index.html', generated_texts=generated_texts)
 
-        if uploaded_file.filename != '':
-            # Генерируем уникальное имя файла
-            filename = os.path.basename(uploaded_file.filename)
-            uploaded_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            uploaded_file.save(uploaded_image)
-            # Для корректного отображения в HTML, используем url_for
-            uploaded_image = url_for('static', filename=f'uploads/{filename}')
+        if not platforms:
+            flash("Пожалуйста, выберите хотя бы одну соцсеть.", "error")
+            return render_template('index.html', generated_texts=generated_texts)
 
+        for platform in platforms:
+            result = generate_social_media_text(news_text, platform, output_language) # Передаём язык
+            generated_texts[platform] = result
 
-        news_text = generate_news_summary(news_text_input, api_key)
-        if "Ошибка" in news_text: #Если произошла ошибка на предыдущем шаге
-            error_message = news_text
-            news_text = None
-    
-        # Генерация изображения (используем сокращенный текст)
-        if news_text:  # Только если текст новости успешно сгенерирован
-          generated_image_path, generation_error = generate_news_image(news_text, api_key)
-          if generated_image_path:
-              image_path = url_for('static', filename=f'uploads/{os.path.basename(generated_image_path)}')
-          elif generation_error:  # Если произошла ошибка генерации
-             error_message = generation_error
+    return render_template('index.html', generated_texts=generated_texts)
 
 
-        return render_template('index.html', news_text=news_text, image_path=image_path, uploaded_image=uploaded_image, error_message=error_message)
-
-    return render_template('index.html', news_text=news_text, image_path=image_path, uploaded_image=uploaded_image, error_message=error_message)
-
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=10000, debug=True)  # debug=True для вывода ошибок в браузер (ТОЛЬКО для разработки!)
+if __name__ == '__main__':
+    app.run(debug=True)
