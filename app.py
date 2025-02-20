@@ -1,164 +1,118 @@
-import openai
-from flask import Flask, render_template, request, flash
-from dotenv import load_dotenv
+from flask import Flask, render_template, request, send_file
+import instaloader
+from PIL import Image, ImageDraw, ImageFont
+from moviepy.editor import VideoFileClip
 import os
-from langdetect import detect, LangDetectException  # Импортируем langdetect
-from fetch_article import fetch_article_text
-
-
-
-load_dotenv()
+import shutil
+from openai import OpenAI
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'  # Замените на РЕАЛЬНЫЙ секретный ключ!
 
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Инициализация Instaloader и OpenAI
+L = instaloader.Instaloader()
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"))
 
-PLATFORM_PROMPTS = {
-    "twitter": """Ты – эксперт по контенту для Twitter (X).
-Напиши цепляющий твит на языке {output_language} на основе следующей новости:
-"{НОВОСТЬ}"
-
-📌 Правила:
-- Длина: до 200 символов
-- Минимум "воды", только суть!
-- Можно добавить интригу или вопрос
-- Не используй сложные конструкции
-- В конце добавь 2-3 хештега на языке {output_language}
-
-🎯 Твой текст должен быть емким, но мощным!""",
-    "instagram": """Ты – профессиональный SMM-копирайтер, который создает увлекательные посты для Instagram.
-Твоя задача — написать пост на языке {output_language} на основе следующей новости:
-"{НОВОСТЬ}"
-
-📌 Правила оформления:
-- Максимальная длина поста: 150 символов
-- Стиль: динамичный, яркий, с эмоциями
-- Используй эмодзи, чтобы привлечь внимание
-- Добавь призыв к действию (например, "Что думаете? Делитесь в комментариях! 💬")
-- В конце добавь до 5 популярных хештегов, связанных с темой, на языке {output_language}
-
-🎯 Твой результат должен быть кратким, увлекательным и соответствовать стилистике Instagram!""",
-    "facebook": """Ты – профессиональный копирайтер, который пишет посты для Facebook.
-На основе следующей новости создай вовлекающий пост на языке {output_language}:
-"{НОВОСТЬ}"
-
-📌 Правила:
-- Длина: 200-500 символов
-- Формат: 2-3 абзаца, без сложных фраз
-- Добавь призыв к обсуждению
-- В конце — 3-4 хештега на языке {output_language}
-
-🎯 Твой текст должен быть интересным и удобным для чтения!""",
-    "tiktok": """Ты – креативный контент-мейкер TikTok.
-Создай описание к видео на языке {output_language} на основе этой новости:
-"{НОВОСТЬ}"
-
-📌 Формат:
-- Максимум 150 символов
-- Минимум "воды", максимум вовлечения
-- Добавь 4-5 популярных хештегов на языке {output_language}
-
-🎯 Должно выглядеть так, будто это трендовый контент TikTok!""",
-    "telegram": """Ты – профессиональный Telegram-копирайтер.
-Напиши лаконичный, но информативный пост на языке {output_language} по этой новости:
-"{НОВОСТЬ}"
-
-📌 Условия:
-- Длина: 200-400 символов
-- Не слишком официально, но и не "жёлтая пресса"
-- Важные факты + легкий намек на вывод
-- 2-3 хештега в конце на языке {output_language}
-
-🎯 Текст должен быть полезным и читабельным!""",
-    "pinterest": """Ты – креативный копирайтер для Pinterest.
-Создай описание для пина на языке {output_language} на основе этой новости:
-"{НОВОСТЬ}"
-
-📌 Условия:
-- Длина: до 500 символов
-- Используй вдохновляющий и мотивирующий стиль
-- Призывай пользователей сохранять пин или делиться им
-- Включи 3-4 хештега на языке {output_language}
-
-🎯 Текст должен быть привлекательным и легко воспринимаемым!""",
-    "youtube": """Ты – эксперт по контенту для YouTube.
-Напиши описание видео на языке {output_language}, основываясь на следующей новости:
-"{НОВОСТЬ}"
-
-📌 Условия:
-- Длина: до 300 символов
-- Кратко расскажи о теме видео
-- Используй интересный стиль, чтобы вовлечь зрителя
-- Призови подписаться или оставить комментарий
-- Добавь 2-3 хештега на языке {output_language}
-
-🎯 Текст должен быть информативным, но с элементами интриги!"""
-}
-
-def detect_language(text):
-    """Определяет язык текста."""
+# Функция для парсинга поста
+def parse_instagram_post(url):
     try:
-        return detect(text)
-    except LangDetectException:
-        return 'en'  # В случае ошибки возвращаем английский по умолчанию
-
-
-def generate_social_media_text(news_text, platform, output_language):
-    """Генерирует текст для соцсети с учетом языка."""
-    prompt = PLATFORM_PROMPTS.get(platform)
-    if not prompt:
-        return {"text": "Платформа не поддерживается.", "success": False, "warning": None}
-    
-    # news_language = detect_language(news_text) #Определяем язык текста новости. (Это больше не нужно)
-
-    prompt = prompt.format(НОВОСТЬ=news_text, output_language=output_language) #, news_language=news_language)
-
-    if not openai.api_key:
-        return {"text": "Ошибка: API-ключ OpenAI не установлен.  Установите переменную окружения OPENAI_API_KEY.", "success": False, "warning": None}
-
-    try:
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=400,
-            temperature=0.7,
-        )
-        generated_text = response.choices[0].message.content.strip()
-        return {"text": generated_text, "success": True, "warning": None}
-
-    except openai.APIError as e:
-        return {"text": f"Ошибка OpenAI: {e}", "success": False, "warning": None}
+        shortcode = url.split("/")[-2]
+        post = instaloader.Post.from_shortcode(L.context, shortcode)
+        L.download_post(post, target="downloaded_post")
+        content_type = "image" if not post.is_video else "video"
+        content_path = f"downloaded_post/{post.shortcode}.jpg" if content_type == "image" else f"downloaded_post/{post.shortcode}.mp4"
+        caption = post.caption if post.caption else "Без текста"
+        return content_type, content_path, caption
     except Exception as e:
-        return {"text": f"Произошла ошибка: {e}", "success": False, "warning": None}
+        return None, None, f"Ошибка парсинга: {str(e)}"
 
+# Генерация текста через OpenAI
+def generate_text(original_text, text_changes):
+    prompt = f"Перепиши следующий текст с учетом этих изменений: '{text_changes}'. Оригинальный текст: '{original_text}'"
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=100
+    )
+    return response.choices[0].message.content.strip()
 
-@app.route('/', methods=['GET', 'POST'])
+# Генерация изображения через OpenAI (DALL·E)
+def generate_image(description):
+    response = openai_client.images.generate(
+        model="dall-e-3",
+        prompt=description,
+        n=1,
+        size="1024x1024"
+    )
+    image_url = response.data[0].url
+    image_path = f"static/generated_image_{len(os.listdir('static'))}.jpg"
+    with open(image_path, "wb") as f:
+        f.write(requests.get(image_url).content)
+    return image_path
+
+# Функция для изменения изображения (если не генерируем новое)
+def edit_image(image_path, changes):
+    img = Image.open(image_path)
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    draw.text((10, 10), changes, font=font, fill=(255, 0, 0))
+    new_path = f"static/edited_image_{os.path.basename(image_path)}"
+    img.save(new_path)
+    return new_path
+
+# Функция для изменения видео
+def edit_video(video_path, changes):
+    clip = VideoFileClip(video_path)
+    new_clip = clip.subclip(0, min(10, clip.duration))
+    new_path = f"static/edited_video_{os.path.basename(video_path)}"
+    new_clip.write_videofile(new_path, logger=None)
+    return new_path
+
+# Генерация постов
+def generate_posts(content_type, content_path, text, changes, text_changes, num_posts):
+    results = []
+    for i in range(num_posts):
+        # Генерируем новый текст
+        new_text = generate_text(text, text_changes) + f" (Пост #{i+1})"
+        
+        if content_type == "image":
+            if "сгенерировать новое" in changes.lower():
+                new_content = generate_image(changes + f" Пост #{i+1}")
+            else:
+                new_content = edit_image(content_path, changes + f" Пост #{i+1}")
+        else:
+            new_content = edit_video(content_path, changes)
+        
+        results.append((new_content, new_text))
+    return results
+
+# Главная страница
+@app.route("/", methods=["GET", "POST"])
 def index():
-    generated_texts = {}
-    if request.method == 'POST':
-        news_text = request.form['news_text'].strip()
-        platforms = request.form.getlist('platforms')
-        output_language = request.form['output_language']  # Получаем выбранный язык
+    if request.method == "POST":
+        url = request.form["url"]
+        changes = request.form["changes"]
+        text_changes = request.form["text_changes"]
+        num_posts = int(request.form["num_posts"])
 
-        if not news_text:
-            flash("Пожалуйста, введите текст новости.", "error")
-            return render_template('index.html', generated_texts=generated_texts)
+        # Очищаем старые файлы
+        if os.path.exists("downloaded_post"):
+            shutil.rmtree("downloaded_post")
+        if os.path.exists("static"):
+            for f in os.listdir("static"):
+                if f != "style.css":
+                    os.remove(os.path.join("static", f))
 
-        if not platforms:
-            flash("Пожалуйста, выберите хотя бы одну соцсеть.", "error")
-            return render_template('index.html', generated_texts=generated_texts)
+        # Парсинг и генерация
+        content_type, content_path, caption = parse_instagram_post(url)
+        if content_path:
+            results = generate_posts(content_type, content_path, caption, changes, text_changes, num_posts)
+            return render_template("index.html", results=results, error=None)
+        else:
+            return render_template("index.html", results=None, error=caption)
+    
+    return render_template("index.html", results=None, error=None)
 
-        for platform in platforms:
-            result = generate_social_media_text(news_text, platform, output_language) # Передаём язык
-            generated_texts[platform] = result
-
-    return render_template('index.html', generated_texts=generated_texts)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    if not os.path.exists("static"):
+        os.makedirs("static")
+    app.run(host="0.0.0.0", port=5000)
