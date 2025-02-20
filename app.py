@@ -10,7 +10,19 @@ app = Flask(__name__)
 
 # Инициализация Instaloader и OpenAI
 L = instaloader.Instaloader()
-L.login(os.getenv("INSTAGRAM_USERNAME"), os.getenv("INSTAGRAM_PASSWORD"))
+
+# Попытка авторизации, если переменные окружения заданы
+username = os.getenv("INSTAGRAM_USERNAME")
+password = os.getenv("INSTAGRAM_PASSWORD")
+if username and password:
+    try:
+        L.login(username, password)
+        print(f"Успешно авторизован как {username}")
+    except Exception as e:
+        print(f"Ошибка авторизации в Instagram: {str(e)}")
+else:
+    print("Авторизация не выполнена: отсутствуют учетные данные Instagram")
+
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"))
 
 # Функция для парсинга поста
@@ -91,7 +103,7 @@ def index():
     error = None
 
     if request.method == "POST":
-        if "parse" in request.form:  # Нажата кнопка "Парсить"
+        if "parse" in request.form:
             url = request.form["url"]
             if os.path.exists("downloaded_post"):
                 shutil.rmtree("downloaded_post")
@@ -101,7 +113,7 @@ def index():
             else:
                 error = caption
 
-        elif "generate" in request.form:  # Нажата кнопка "Сгенерировать"
+        elif "generate" in request.form:
             url = request.form["url"]
             changes = request.form["changes"]
             text_changes = request.form["text_changes"]
