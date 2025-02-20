@@ -6,14 +6,12 @@ import os
 import shutil
 from openai import OpenAI
 
-# Создаем экземпляр Flask
 app = Flask(__name__)
 
 # Инициализация Instaloader и OpenAI
 L = instaloader.Instaloader()
-openai_client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here")
-)
+L.login(os.getenv("INSTAGRAM_USERNAME"), os.getenv("INSTAGRAM_PASSWORD"))
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"))
 
 # Функция для парсинга поста
 def parse_instagram_post(url):
@@ -52,7 +50,7 @@ def generate_image(description):
         f.write(requests.get(image_url).content)
     return image_path
 
-# Функция для изменения изображения (если не генерируем новое)
+# Функция для изменения изображения
 def edit_image(image_path, changes):
     img = Image.open(image_path)
     draw = ImageDraw.Draw(img)
@@ -88,27 +86,41 @@ def generate_posts(content_type, content_path, text, changes, text_changes, num_
 # Главная страница
 @app.route("/", methods=["GET", "POST"])
 def index():
+    parsed_data = None
+    results = None
+    error = None
+
     if request.method == "POST":
-        url = request.form["url"]
-        changes = request.form["changes"]
-        text_changes = request.form["text_changes"]
-        num_posts = int(request.form["num_posts"])
+        if "parse" in request.form:  # Нажата кнопка "Парсить"
+            url = request.form["url"]
+            if os.path.exists("downloaded_post"):
+                shutil.rmtree("downloaded_post")
+            content_type, content_path, caption = parse_instagram_post(url)
+            if content_path:
+                parsed_data = {"type": content_type, "path": content_path, "caption": caption}
+            else:
+                error = caption
 
-        if os.path.exists("downloaded_post"):
-            shutil.rmtree("downloaded_post")
-        if os.path.exists("static"):
-            for f in os.listdir("static"):
-                if f != "style.css":
-                    os.remove(os.path.join("static", f))
+        elif "generate" in request.form:  # Нажата кнопка "Сгенерировать"
+            url = request.form["url"]
+            changes = request.form["changes"]
+            text_changes = request.form["text_changes"]
+            num_posts = int(request.form["num_posts"])
 
-        content_type, content_path, caption = parse_instagram_post(url)
-        if content_path:
-            results = generate_posts(content_type, content_path, caption, changes, text_changes, num_posts)
-            return render_template("index.html", results=results, error=None)
-        else:
-            return render_template("index.html", results=None, error=caption)
-    
-    return render_template("index.html", results=None, error=None)
+            if os.path.exists("downloaded_post"):
+                shutil.rmtree("downloaded_post")
+            if os.path.exists("static"):
+                for f in os.listdir("static"):
+                    if f != "style.css":
+                        os.remove(os.path.join("static", f))
+
+            content_type, content_path, caption = parse_instagram_post(url)
+            if content_path:
+                results = generate_posts(content_type, content_path, caption, changes, text_changes, num_posts)
+            else:
+                error = caption
+
+    return render_template("index.html", parsed_data=parsed_data, results=results, error=error)
 
 if __name__ == "__main__":
     if not os.path.exists("static"):
