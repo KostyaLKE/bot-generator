@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 20px;
 }
-h1 {
+h1, h2 {
     text-align: center;
 }
 form {
@@ -14,12 +14,18 @@ input, button {
     padding: 8px;
     margin: 5px 0;
 }
-button {
+button[name="parse"] {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button[name="generate"] {
     background-color: #4CAF50;
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background-color: #45a049;
+    opacity: 0.9;
 }
