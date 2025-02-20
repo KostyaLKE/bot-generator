@@ -10,7 +10,9 @@ app = Flask(__name__)
 
 # Инициализация Instaloader и OpenAI
 L = instaloader.Instaloader()
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"))
+openai_client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here")
+)  # Убраны дополнительные параметры вроде proxies
 
 # Функция для парсинга поста
 def parse_instagram_post(url):
