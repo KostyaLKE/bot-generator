@@ -10,14 +10,19 @@ app = Flask(__name__)
 
 # Инициализация Instaloader и OpenAI
 L = instaloader.Instaloader()
+session_file = "instagram_session"
 
-# Попытка авторизации, если переменные окружения заданы
 username = os.getenv("INSTAGRAM_USERNAME")
 password = os.getenv("INSTAGRAM_PASSWORD")
 if username and password:
     try:
-        L.login(username, password)
-        print(f"Успешно авторизован как {username}")
+        if os.path.exists(session_file):
+            L.load_session_from_file(username, session_file)
+            print(f"Загружена сессия для {username}")
+        else:
+            L.login(username, password)
+            L.save_session_to_file(session_file)
+            print(f"Создана новая сессия для {username}")
     except Exception as e:
         print(f"Ошибка авторизации в Instagram: {str(e)}")
 else:
