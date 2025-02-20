@@ -2,89 +2,45 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генерация текста</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      .copy-button {
-        cursor: pointer;
-      }
-      .platform-checkboxes label {
-        margin-right: 15px;
-      }
-      /* Убираем стили для спиннера */
-    </style>
+    <title>Instagram Парсер</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center">Генерация текста под соцсеть</h1>
-        <div class="card shadow-sm p-4">
-            <form method="post"> 
-                <div class="mb-3">
-                    <label for="news_text" class="form-label">Введите текст новости:</label>
-                    <textarea class="form-control" id="news_text" name="news_text" rows="3" required></textarea>
-                </div>
-                <div class="mb-3 platform-checkboxes">
-                    <label class="form-label">Выберите соцсети:</label><br>
-                    <label><input type="checkbox" name="platforms" value="twitter"> Twitter</label>
-                    <label><input type="checkbox" name="platforms" value="instagram"> Instagram</label>
-                    <label><input type="checkbox" name="platforms" value="telegram"> Telegram</label>
-                    <label><input type="checkbox" name="platforms" value="facebook"> Facebook</label>
-                    <label><input type="checkbox" name="platforms" value="tiktok"> TikTok</label>
-                    <label><input type="checkbox" name="platforms" value="youtube"> YouTube</label>
-                    <label><input type="checkbox" name="platforms" value="pinterest"> Pinterest</label>
-                </div>
+<body>
+    <h1>Instagram Парсер</h1>
+    <form method="POST">
+        <label>Ссылка на пост:</label><br>
+        <input type="text" name="url" required><br><br>
+        
+        <label>Изменения для фото/видео:</label><br>
+        <input type="text" name="changes" required><br><br>
+        
+        <label>Изменения для текста:</label><br>
+        <input type="text" name="text_changes" required><br><br>
+        
+        <label>Количество постов:</label><br>
+        <input type="number" name="num_posts" min="1" required><br><br>
+        
+        <button type="submit">Запустить</button>
+    </form>
 
-                <div class="mb-3">
-                    <label for="output_language" class="form-label">Выберите язык генерации:</label>
-                    <select class="form-select" id="output_language" name="output_language">
-                        <option value="ru">Русский</option>
-                        <option value="uk">Украинский</option>
-                        <option value="en">Английский</option>
-                    </select>
-                </div>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
 
-                <button type="submit" class="btn btn-primary w-100">Сгенерировать</button>
-                
-            </form>
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} mt-4" role="alert">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        {% if generated_texts %}
-            {% for platform, result in generated_texts.items() %}
-                <div class="alert alert-success mt-4" role="alert">
-                    <h5>Результат для {{ platform }}:</h5>
-                    <p>{{ result.text }}</p>
-                    <button class="btn btn-secondary btn-sm copy-button" onclick="copyToClipboard('{{ result.text }}')">
-                        Копировать
-                    </button>
-                    {% if result.warning %}
-                        <p class="text-warning">{{ result.warning }}</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <script>
-      function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(function() {
-          alert('Текст скопирован!');
-        }, function() {
-          alert('Не удалось скопировать текст.');
-        });
-      }
-
-      // Убираем скрипт, который показывал спиннер
-    </script>
+    {% if results %}
+        <h2>Результаты:</h2>
+        {% for path, text in results %}
+            <div>
+                <p>{{ text }}</p>
+                {% if path.endswith('.jpg') %}
+                    <img src="/{{ path }}" width="300">
+                {% elif path.endswith('.mp4') %}
+                    <video width="300" controls>
+                        <source src="/{{ path }}" type="video/mp4">
+                    </video>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
 </body>
 </html>
