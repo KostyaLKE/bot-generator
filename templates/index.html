@@ -9,18 +9,32 @@
     <h1>Instagram Парсер</h1>
     <form method="POST">
         <label>Ссылка на пост:</label><br>
-        <input type="text" name="url" required><br><br>
-        
-        <label>Изменения для фото/видео:</label><br>
-        <input type="text" name="changes" required><br><br>
-        
-        <label>Изменения для текста:</label><br>
-        <input type="text" name="text_changes" required><br><br>
-        
-        <label>Количество постов:</label><br>
-        <input type="number" name="num_posts" min="1" required><br><br>
-        
-        <button type="submit">Запустить</button>
+        <input type="text" name="url" required value="{{ request.form['url'] or '' }}"><br>
+        <button type="submit" name="parse">Парсить</button><br><br>
+
+        {% if parsed_data %}
+            <h2>Спарсенные данные:</h2>
+            <p>Текст: {{ parsed_data.caption }}</p>
+            {% if parsed_data.type == 'image' %}
+                <img src="/{{ parsed_data.path }}" width="300">
+            {% elif parsed_data.type == 'video' %}
+                <video width="300" controls>
+                    <source src="/{{ parsed_data.path }}" type="video/mp4">
+                </video>
+            {% endif %}
+
+            <h2>Укажите изменения:</h2>
+            <label>Изменения для фото/видео:</label><br>
+            <input type="text" name="changes" required><br><br>
+            
+            <label>Изменения для текста:</label><br>
+            <input type="text" name="text_changes" required><br><br>
+            
+            <label>Количество постов:</label><br>
+            <input type="number" name="num_posts" min="1" required><br><br>
+            
+            <button type="submit" name="generate">Сгенерировать</button>
+        {% endif %}
     </form>
 
     {% if error %}
