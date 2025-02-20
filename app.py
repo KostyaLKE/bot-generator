@@ -5,11 +5,14 @@ from moviepy.editor import VideoFileClip
 import os
 import shutil
 from openai import OpenAI
-import httpx
 
+# Создаем экземпляр Flask
+app = Flask(__name__)
+
+# Инициализация Instaloader и OpenAI
+L = instaloader.Instaloader()
 openai_client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"),
-    http_client=httpx.Client(proxies=None)  # Явно отключаем прокси
+    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here")
 )
 
 # Функция для парсинга поста
@@ -71,9 +74,7 @@ def edit_video(video_path, changes):
 def generate_posts(content_type, content_path, text, changes, text_changes, num_posts):
     results = []
     for i in range(num_posts):
-        # Генерируем новый текст
         new_text = generate_text(text, text_changes) + f" (Пост #{i+1})"
-        
         if content_type == "image":
             if "сгенерировать новое" in changes.lower():
                 new_content = generate_image(changes + f" Пост #{i+1}")
@@ -81,7 +82,6 @@ def generate_posts(content_type, content_path, text, changes, text_changes, num_
                 new_content = edit_image(content_path, changes + f" Пост #{i+1}")
         else:
             new_content = edit_video(content_path, changes)
-        
         results.append((new_content, new_text))
     return results
 
@@ -94,7 +94,6 @@ def index():
         text_changes = request.form["text_changes"]
         num_posts = int(request.form["num_posts"])
 
-        # Очищаем старые файлы
         if os.path.exists("downloaded_post"):
             shutil.rmtree("downloaded_post")
         if os.path.exists("static"):
@@ -102,7 +101,6 @@ def index():
                 if f != "style.css":
                     os.remove(os.path.join("static", f))
 
-        # Парсинг и генерация
         content_type, content_path, caption = parse_instagram_post(url)
         if content_path:
             results = generate_posts(content_type, content_path, caption, changes, text_changes, num_posts)
