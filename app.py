@@ -5,14 +5,12 @@ from moviepy.editor import VideoFileClip
 import os
 import shutil
 from openai import OpenAI
+import httpx
 
-app = Flask(__name__)
-
-# Инициализация Instaloader и OpenAI
-L = instaloader.Instaloader()
 openai_client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here")
-)  # Убраны дополнительные параметры вроде proxies
+    api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"),
+    http_client=httpx.Client(proxies=None)  # Явно отключаем прокси
+)
 
 # Функция для парсинга поста
 def parse_instagram_post(url):
